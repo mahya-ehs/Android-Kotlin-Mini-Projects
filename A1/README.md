@@ -1,6 +1,6 @@
 # About Cats - Android App
 
-This is my vert first Android project using Jetpack Compose. It showcases information about different cat breeds, including their names, descriptions, and images.
+This is my very first Android project using Jetpack Compose. It showcases information about different cat breeds, including their names, descriptions, and images.
 
 <img src="demo.png" width="250" height="500">
 
