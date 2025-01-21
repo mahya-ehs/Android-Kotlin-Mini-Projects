@@ -39,7 +39,7 @@ This is my very first Android project using Jetpack Compose. It showcases inform
 
 3. **Utility Function**:
    - `loadDataFromJson`: Parses the JSON file to read cats information.
-   - 
+  
 4. **Composable Functions**:
    - **`AppHeader`**: Displays the app title and header image, which are stored in a Column.
    - **`AppSection`**: Displays a single cat breed's name and a toggleable button for details. A hoist state called `expanded` is defined here and when the state of this variable changes when the button is presseed. If the `expanded.value` is True, then the `CatDetails()` function is called to show more information about the cat.
