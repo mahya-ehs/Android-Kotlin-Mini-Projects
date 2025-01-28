@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Ragdoll",
+    "description": "The ultimate cuddle buddy! This floofy friend will flop in your arms like a plush toy and purr their way into your heart.",
+    "imageResId": "ragdoll"
+  },
+  {
+    "name": "British Shorthair",
+    "description": "The cat version of a royal guard: always dignified, slightly chonky, and ever so unimpressed by your antics.",
+    "imageResId": "britishshort"
+  },
+  {
+    "name": "Persian",
+    "description": "The drama queen of the cat world—long fur, fancy vibes, and a side-eye sharp enough to cut through steel.",
+    "imageResId": "persialainen"
+  },
+  {
+    "name": "Moggy",
+    "description": "Your everyday superhero cat—scrappy, adorable, and a total master of napping in the most awkward places.",
+    "imageResId": "moggy"
+  },
+  {
+    "name": "Siberian",
+    "description": "Fluffy as a snowstorm but warmer than a hot cocoa. This adventurer looks majestic but secretly loves belly rubs.",
+    "imageResId": "siberian"
+  },
+  {
+    "name": "American Shorthair",
+    "description": "The classic all-American kitty! Equal parts playful and chill, they’re basically the golden retriever of cats.",
+    "imageResId": "americanshort"
+  },
+  {
+    "name": "Exotic Shorthair",
+    "description": "A Persian in pajamas! Cute, squishy, and lazy enough to make you jealous of their chill lifestyle.",
+    "imageResId": "exotic"
+  }
+]
