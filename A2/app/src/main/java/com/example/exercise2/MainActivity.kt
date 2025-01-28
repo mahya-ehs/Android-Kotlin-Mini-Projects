@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -134,9 +135,17 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
             Button(
                 onClick = {},
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                containerColor = LightPeach, // Background color
+                contentColor = CutePink         // Text color
+                )
             ) {
-                Text("Shop")
+                Text("Shop",
+                    style = TextStyle(
+                        fontFamily = sour_gummy,
+                        fontSize = 18.sp)
+                )
             }
             Button(
                 onClick = {
@@ -145,16 +154,32 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
                     }
                 },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                containerColor = LightPeach, // Background color
+                contentColor = CutePink         // Text color
+                )
             ) {
-                Text("About Cats")
+                Text("About Cats",
+                    style = TextStyle(
+                        fontFamily = sour_gummy,
+                        fontSize = 18.sp)
+                )
             }
             Button(
                 onClick = {},
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                containerColor = LightPeach, // Background color
+                contentColor = CutePink         // Text color
+                )
             ) {
-                Text("Options")
+                Text("Options",
+                    style = TextStyle(
+                        fontFamily = sour_gummy,
+                        fontSize = 18.sp)
+                )
             }
         }
     }
