@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -54,6 +55,12 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10")
     implementation(libs.coil.compose)
     implementation("com.google.accompanist:accompanist-permissions:0.31.0-alpha")
+
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+
+    implementation("at.favre.lib:bcrypt:0.10.2")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

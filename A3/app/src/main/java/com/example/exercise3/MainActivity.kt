@@ -41,7 +41,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -66,11 +65,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.*
 import androidx.core.content.FileProvider
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import coil.compose.rememberAsyncImagePainter
 import android.Manifest
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.accompanist.permissions.*
 
 
@@ -138,6 +141,7 @@ fun loadDataFromJson(context: Context): List<CatBreed> {
     return Gson().fromJson(json, type)
 }
 
+
 @Composable
 fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
     Box(
@@ -150,6 +154,22 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
+        ModalNavigationDrawer (
+            drawerContent = {
+                ModalDrawerSheet {
+                    Text("Drawer title", modifier = Modifier.padding(16.dp))
+                    HorizontalDivider()
+                    NavigationDrawerItem(
+                        label = { Text(text = "Drawer Item") },
+                        selected = false,
+                        onClick = { /*TODO*/ }
+                    )
+                }
+            }
+        ) {
+
+        }
 
         Column(
             modifier = Modifier
@@ -220,6 +240,9 @@ fun NewView(navController: NavController) {
     val context = LocalContext.current
 
     var text by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    var isValid by remember { mutableStateOf(true) }
     var submit by remember { mutableStateOf(false) }
     var userImage by remember { mutableStateOf<Uri?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -250,22 +273,40 @@ fun NewView(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Label") },
-                readOnly = submit
-            )
-
-            userImage?.let {
+            if (userImage != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(it),
+                    painter = rememberAsyncImagePainter(userImage),
                     contentDescription = "User Image",
                     modifier = Modifier
                         .size(150.dp)
                         .padding(16.dp)
                 )
             }
+            if (submit) {
+                Text(text)
+            }
+
+
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Username") },
+                placeholder = {
+                    if (!isValid) Text("This field is required!")
+                },
+                readOnly = submit,
+                isError = !isValid
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                readOnly = submit,
+                isError = !isValid
+            )
+
 
             ExtendedFloatingActionButton(
                 onClick = {
@@ -290,13 +331,17 @@ fun NewView(navController: NavController) {
                 text = { Text(text = "Add Photo") }
             )
 
-            Button(onClick = { submit = !submit }) {
+            Button(onClick = {
+                if (text.isEmpty() || password.isEmpty())
+                    isValid = false
+                else {
+                    isValid = true
+                    submit = true
+                }
+            }) {
                 Text("Submit")
             }
 
-            if (submit) {
-                Text(text)
-            }
         }
     }
 }
