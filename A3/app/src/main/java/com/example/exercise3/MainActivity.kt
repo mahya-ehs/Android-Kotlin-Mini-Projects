@@ -1,5 +1,6 @@
 package com.example.exercise3
 
+import android.app.AlertDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,14 +28,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.exercise3.ui.theme.Exercise3Theme
 import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
@@ -49,7 +63,15 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
+import androidx.compose.runtime.*
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import coil.compose.rememberAsyncImagePainter
+import android.Manifest
+import com.google.accompanist.permissions.*
 
 
 val SoftBeige = Color(0xFFF7E6CA)
@@ -94,6 +116,9 @@ fun MyApp() {
         composable("about_cats_view") {
             AllSections(navController = navController, catInfo = catInfo)
         }
+        composable("new_view") {
+            NewView(navController = navController)
+        }
     }
 }
 
@@ -133,7 +158,11 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = {},
+                onClick = {
+                    navController.navigate("new_view") {
+                        popUpTo("main_menu") { inclusive = false }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -184,6 +213,127 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 }
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun NewView(navController: NavController) {
+    val context = LocalContext.current
+
+    var text by remember { mutableStateOf("") }
+    var submit by remember { mutableStateOf(false) }
+    var userImage by remember { mutableStateOf<Uri?>(null) }
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            userImage = uri
+        }
+    )
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success: Boolean ->
+            if (success) {
+                userImage = cameraImageUri
+            }
+        }
+    )
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Label") },
+                readOnly = submit
+            )
+
+            userImage?.let {
+                Image(
+                    painter = rememberAsyncImagePainter(it),
+                    contentDescription = "User Image",
+                    modifier = Modifier
+                        .size(150.dp)
+                        .padding(16.dp)
+                )
+            }
+
+            ExtendedFloatingActionButton(
+                onClick = {
+                    chooseImage(
+                        context = context,
+                        gallerySelect = {
+                            galleryLauncher.launch("image/*") },
+                        cameraSelect = {
+                            if (cameraPermissionState.status.isGranted) {
+                                val uri = createImageUri(context)
+                                if (uri != null) {
+                                    cameraImageUri = uri
+                                    cameraLauncher.launch(uri)
+                                }
+                            } else {
+                                cameraPermissionState.launchPermissionRequest()
+                            }
+                        }
+                    )
+                },
+                icon = { Icon(Icons.Filled.AddCircle, contentDescription = "Pick Image") },
+                text = { Text(text = "Add Photo") }
+            )
+
+            Button(onClick = { submit = !submit }) {
+                Text("Submit")
+            }
+
+            if (submit) {
+                Text(text)
+            }
+        }
+    }
+}
+
+
+fun createImageUri(context: Context): Uri? {
+    var counter = 0
+    val storageDir = File(context.getExternalFilesDir(null), "Pictures")
+
+    if (!storageDir.exists()) {
+        storageDir.mkdirs()
+    }
+
+    val file = File(storageDir, "IMG_$counter.jpg")
+
+    return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+}
+
+fun chooseImage(
+    context: Context,
+    gallerySelect: () -> Unit,
+    cameraSelect: () -> Unit
+) {
+
+    AlertDialog.Builder(context).apply {
+        setTitle("Choose Image Source")
+        setItems(arrayOf("Gallery", "Camera")) { _, which ->
+            if (which == 0) {
+                gallerySelect()
+            } else {
+                cameraSelect()
+            }
+        }
+        show()
+    }
+}
+
 
 
 @Composable

@@ -52,6 +52,8 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.3")
     implementation("com.google.code.gson:gson:2.10")
+    implementation(libs.coil.compose)
+    implementation("com.google.accompanist:accompanist-permissions:0.31.0-alpha")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
