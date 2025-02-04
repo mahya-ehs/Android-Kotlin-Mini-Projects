@@ -67,6 +67,9 @@ import androidx.core.content.FileProvider
 import java.io.File
 import coil.compose.rememberAsyncImagePainter
 import android.Manifest
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -74,7 +77,14 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.room.Room
 import com.google.accompanist.permissions.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.FileOutputStream
+import java.io.InputStream
 
 
 val SoftBeige = Color(0xFFF7E6CA)
@@ -144,39 +154,68 @@ fun loadDataFromJson(context: Context): List<CatBreed> {
 
 @Composable
 fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val db = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java, "my-db"
+    ).build()
+    val userDao = remember { db.userDao() }
+    var user by remember { mutableStateOf<User?>(null) }
+
+
+    LaunchedEffect(Unit) {
+        user = withContext(Dispatchers.IO) { userDao.getLatestUser() }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
         Image(
-            painter = painterResource(id = R.drawable.i3),
+            painter = painterResource(id = R.drawable.i2),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
-        ModalNavigationDrawer (
-            drawerContent = {
-                ModalDrawerSheet {
-                    Text("Drawer title", modifier = Modifier.padding(16.dp))
-                    HorizontalDivider()
-                    NavigationDrawerItem(
-                        label = { Text(text = "Drawer Item") },
-                        selected = false,
-                        onClick = { /*TODO*/ }
-                    )
-                }
-            }
-        ) {
-
-        }
+//        ModalNavigationDrawer (
+//            drawerContent = {
+//                ModalDrawerSheet {
+//                    Text("Drawer title", modifier = Modifier.padding(16.dp))
+//                    HorizontalDivider()
+//                    NavigationDrawerItem(
+//                        label = { Text(text = "Drawer Item") },
+//                        selected = false,
+//                        onClick = { /*TODO*/ }
+//                    )
+//                }
+//            }
+//        ) {}
 
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(100.dp).padding(bottom =50.dp),
+                .align(Alignment.Center)
+                .padding(50.dp).padding(bottom = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            user?.let { currentUser ->
+                Image(
+                    painter = rememberAsyncImagePainter(currentUser.imagePath),
+                    contentDescription = "User Profile",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(220.dp)
+                        .aspectRatio(1f)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Gray, CircleShape)
+                )
+                Text(
+                    text = "Welcome, ${currentUser.username}!",
+                )
+            } ?: run {
+                Text("No user found. Please sign up!")
+            }
+
             Button(
                 onClick = {
                     navController.navigate("new_view") {
@@ -239,13 +278,28 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
 fun NewView(navController: NavController) {
     val context = LocalContext.current
 
-    var text by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val db = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java, "my-db"
+    ).build()
 
+    val userDao = remember { db.userDao() }
+
+    var text by remember { mutableStateOf("") }
     var isValid by remember { mutableStateOf(true) }
     var submit by remember { mutableStateOf(false) }
     var userImage by remember { mutableStateOf<Uri?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    var user by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(Unit) {
+        user = withContext(Dispatchers.IO) { userDao.getLatestUser() }
+        user?.let {
+            text = it.username
+            userImage = Uri.parse(it.imagePath)
+        }
+    }
 
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -269,20 +323,22 @@ fun NewView(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (userImage != null) {
+
+            if (!submit) {
                 Image(
                     painter = rememberAsyncImagePainter(userImage),
                     contentDescription = "User Image",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(150.dp)
-                        .padding(16.dp)
+                        .size(220.dp)
+                        .aspectRatio(1f)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Gray, CircleShape)
                 )
-            }
-            if (submit) {
                 Text(text)
             }
 
@@ -297,16 +353,6 @@ fun NewView(navController: NavController) {
                 readOnly = submit,
                 isError = !isValid
             )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                readOnly = submit,
-                isError = !isValid
-            )
-
 
             ExtendedFloatingActionButton(
                 onClick = {
@@ -332,11 +378,19 @@ fun NewView(navController: NavController) {
             )
 
             Button(onClick = {
-                if (text.isEmpty() || password.isEmpty())
-                    isValid = false
-                else {
+                if (text.isNotEmpty() && userImage != null) {
+                    val imagePath = saveImageToInternalStorage(context, userImage!!)
+                    val user = User(username = text, imagePath = imagePath)
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        userDao.insertUser(user)
+                    }
                     isValid = true
                     submit = true
+                }
+
+                else {
+                    isValid = false
                 }
             }) {
                 Text("Submit")
@@ -344,6 +398,20 @@ fun NewView(navController: NavController) {
 
         }
     }
+}
+
+fun saveImageToInternalStorage(context: Context, imageUri: Uri): String {
+    val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
+    val file = File(context.filesDir, "image_${System.currentTimeMillis()}.jpg")
+    var path = ""
+    inputStream?.use { input ->
+        FileOutputStream(file).use { output ->
+            input.copyTo(output)
+        }
+    }
+    path = file.absolutePath
+
+    return path
 }
 
 
