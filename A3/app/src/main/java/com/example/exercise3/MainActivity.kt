@@ -178,20 +178,6 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
             contentScale = ContentScale.Crop
         )
 
-//        ModalNavigationDrawer (
-//            drawerContent = {
-//                ModalDrawerSheet {
-//                    Text("Drawer title", modifier = Modifier.padding(16.dp))
-//                    HorizontalDivider()
-//                    NavigationDrawerItem(
-//                        label = { Text(text = "Drawer Item") },
-//                        selected = false,
-//                        onClick = { /*TODO*/ }
-//                    )
-//                }
-//            }
-//        ) {}
-
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -229,7 +215,7 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
                     contentColor = CutePink         // Text color
                 )
             ) {
-                Text("Shop",
+                Text("Profile",
                     style = TextStyle(
                         fontFamily = sour_gummy,
                         fontSize = 18.sp)
@@ -277,7 +263,6 @@ fun MainMenu(navController: NavController, modifier: Modifier = Modifier) {
 @Composable
 fun NewView(navController: NavController) {
     val context = LocalContext.current
-
     val db = Room.databaseBuilder(
         context,
         AppDatabase::class.java, "my-db"
@@ -287,7 +272,10 @@ fun NewView(navController: NavController) {
 
     var text by remember { mutableStateOf("") }
     var isValid by remember { mutableStateOf(true) }
+
     var submit by remember { mutableStateOf(false) }
+    var editMode by remember { mutableStateOf(false) }
+
     var userImage by remember { mutableStateOf<Uri?>(null) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -328,73 +316,93 @@ fun NewView(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
 
-            if (!submit) {
-                Image(
-                    painter = rememberAsyncImagePainter(userImage),
-                    contentDescription = "User Image",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(220.dp)
-                        .aspectRatio(1f)
-                        .clip(CircleShape)
-                        .border(2.dp, Color.Gray, CircleShape)
+            // Default
+            Image(
+                painter = rememberAsyncImagePainter(userImage),
+                contentDescription = "User Image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(220.dp)
+                    .aspectRatio(1f)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.Gray, CircleShape)
+            )
+            Text(text)
+
+
+            if (editMode) {
+                // textfield
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Username") },
+                    placeholder = {
+                        if (!isValid) Text("This field is required!")
+                    },
+                    readOnly = submit
                 )
-                Text(text)
-            }
 
-
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Username") },
-                placeholder = {
-                    if (!isValid) Text("This field is required!")
-                },
-                readOnly = submit,
-                isError = !isValid
-            )
-
-            ExtendedFloatingActionButton(
-                onClick = {
-                    chooseImage(
-                        context = context,
-                        gallerySelect = {
-                            galleryLauncher.launch("image/*") },
-                        cameraSelect = {
-                            if (cameraPermissionState.status.isGranted) {
-                                val uri = createImageUri(context)
-                                if (uri != null) {
-                                    cameraImageUri = uri
-                                    cameraLauncher.launch(uri)
+                // add photo button
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        chooseImage(
+                            context = context,
+                            gallerySelect = {
+                                galleryLauncher.launch("image/*") },
+                            cameraSelect = {
+                                if (cameraPermissionState.status.isGranted) {
+                                    val uri = createImageUri(context)
+                                    if (uri != null) {
+                                        cameraImageUri = uri
+                                        cameraLauncher.launch(uri)
+                                    }
+                                } else {
+                                    cameraPermissionState.launchPermissionRequest()
                                 }
-                            } else {
-                                cameraPermissionState.launchPermissionRequest()
                             }
+                        )
+                    },
+                    icon = { Icon(Icons.Filled.AddCircle, contentDescription = "Pick Image") },
+                    text = { Text(text = "Add Photo") },
+                )
+                Button(
+                    onClick = {
+                        if (text.isNotEmpty() && userImage != null) {
+                            val imagePath = saveImageToInternalStorage(context, userImage!!)
+                            val user = User(username = text, imagePath = imagePath)
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                userDao.insertUser(user)
+                            }
+                            isValid = true
+                            submit = true
+                            editMode = false
                         }
-                    )
-                },
-                icon = { Icon(Icons.Filled.AddCircle, contentDescription = "Pick Image") },
-                text = { Text(text = "Add Photo") }
-            )
 
-            Button(onClick = {
-                if (text.isNotEmpty() && userImage != null) {
-                    val imagePath = saveImageToInternalStorage(context, userImage!!)
-                    val user = User(username = text, imagePath = imagePath)
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        userDao.insertUser(user)
+                        else {
+                            isValid = false
+                        }
                     }
-                    isValid = true
-                    submit = true
+                ) {
+                    Text("Submit")
                 }
 
-                else {
-                    isValid = false
-                }
-            }) {
-                Text("Submit")
+
             }
+            else {
+                Button(
+                    onClick = {
+                        editMode = true
+                    }
+                ) {
+                    Text("Edit")
+                }
+            }
+
+
+
+
+
 
         }
     }
