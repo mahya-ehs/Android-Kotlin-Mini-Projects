@@ -270,7 +270,7 @@ fun NewView(navController: NavController) {
 
     val userDao = remember { db.userDao() }
 
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("Default") }
     var isValid by remember { mutableStateOf(true) }
 
     var submit by remember { mutableStateOf(false) }
@@ -327,7 +327,7 @@ fun NewView(navController: NavController) {
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
             )
-            Text(text)
+            Text( "username: ${text}!")
 
 
             if (editMode) {
@@ -424,14 +424,14 @@ fun saveImageToInternalStorage(context: Context, imageUri: Uri): String {
 
 
 fun createImageUri(context: Context): Uri? {
-    var counter = 0
+    val timeS = System.currentTimeMillis()
     val storageDir = File(context.getExternalFilesDir(null), "Pictures")
 
     if (!storageDir.exists()) {
         storageDir.mkdirs()
     }
 
-    val file = File(storageDir, "IMG_$counter.jpg")
+    val file = File(storageDir, "IMG_$timeS.jpg")
 
     return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
 }
